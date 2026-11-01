@@ -678,7 +678,7 @@
           })
           .join('')
       : '';
-    const shownPlayers = isShowdown ? [] : game.players.filter((p) => p.showedCards && p.cards);
+    const shownPlayers = game.players.filter((p) => p.showedCards && p.cards);
     const shownLines = shownPlayers
       .map((p) => `🃏 ${Lobby.escapeHtml(p.name)} 亮牌 ${p.cards.map(cardText).join(' ')}`)
       .join('<br>');
@@ -686,9 +686,10 @@
       `${lines}${extra ? `<span class="hand-pills">${extra}</span>` : ''}` +
       `${shownLines ? `<div class="show-cards">${shownLines}</div>` : ''}`;
 
-    // 亮牌按钮：任何本局玩家（摊牌局全员已亮，无需按钮）
+    // 亮牌按钮：任何本局玩家（含弃牌者）——摊牌局中已被自动亮牌（有牌型名）的除外
     const showBtn = $('#btn-show');
-    showBtn.hidden = !( !isShowdown && me && me.inHand && !me.showedCards);
+    const autoRevealed = isShowdown && me && !!me.handName;
+    showBtn.hidden = !(me && me.inHand && !me.showedCards && !autoRevealed);
 
     // 准备状态与按钮
     const readyBox = $('#ready-status');
