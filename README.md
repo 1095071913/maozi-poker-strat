@@ -6,17 +6,17 @@
 
 ## 🏗️ 示例演示
 
-<img src="images/f61e8b50152ff2205c89426fdb7e0d17.png" alt="null" style="zoom:30%;" />
+<img src="images/f61e8b50152ff2205c89426fdb7e0d17.png" alt="null" style="zoom:10%;" />
 
-<img src="images/56f00b13ab39080c3d51071af7dcef6f.png" alt="null" style="zoom:30%;" />
+<img src="images/56f00b13ab39080c3d51071af7dcef6f.png" alt="null" style="zoom:10%;" />
 
-<img src="images/b0aa42d447353525b8379b36d0e9fb26.png" alt="null" style="zoom:30%;" />
+<img src="images/b0aa42d447353525b8379b36d0e9fb26.png" alt="null" style="zoom:10%;" />
 
-<img src="images/26749110f3d11f1721b95089028c07ba.jpg" alt="null" style="zoom:30%;" />
+<img src="images/26749110f3d11f1721b95089028c07ba.jpg" alt="null" style="zoom:10%;" />
 
-<img src="images/32ade6549567a3090eb8261d952c2231.png" alt="null" style="zoom:30%;" />
+<img src="images/32ade6549567a3090eb8261d952c2231.png" alt="null" style="zoom:10%;" />
 
-<img src="images/6d1306177e2d554641dad5459acdedcc.png" alt="null" style="zoom:30%;" />
+<img src="images/6d1306177e2d554641dad5459acdedcc.png" alt="null" style="zoom:10%;" />
 
 ## ✨ 功能一览
 
