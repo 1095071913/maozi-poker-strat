@@ -1,0 +1,9 @@
+services:
+  poker:
+    build: .
+    container_name: maozi-poker-strat
+    ports:
+      - "18888:18888"
+    restart: always
+    # 房间与牌局状态保存在进程内存，无需持久化卷；
+    # 重启容器 = 清空所有房间（相当于服务器重启）

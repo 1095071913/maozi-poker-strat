@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#04120d" />
+  <title>德州扑克 · 手机牌局</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <!-- 背景氛围层 -->
+  <div class="bg-atmo" aria-hidden="true">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+    <div class="bg-noise"></div>
+  </div>
+
+  <div id="app">
+
+    <!-- ═══════════ 首页大厅 ═══════════ -->
+    <section id="view-lobby" class="view">
+      <div class="lobby-hero">
+        <div class="fan-cards" aria-hidden="true">
+          <span class="fan-card fc-1"><b>A</b><i>♠</i></span>
+          <span class="fan-card fc-2 red"><b>K</b><i>♥</i></span>
+          <span class="fan-card fc-3"><b>Q</b><i>♠</i></span>
+        </div>
+        <p class="brand-mark">— ♠ ♥ ♦ ♣ —</p>
+        <h1 class="brand-title">德州扑克</h1>
+        <p class="subtitle">TEXAS HOLD'EM · 和朋友随时随地开一局</p>
+      </div>
+      <div class="lobby-actions">
+        <button class="btn btn-primary btn-xl" id="btn-goto-create">
+          <span class="btn-ico">👑</span><span class="btn-txt">创建房间<small>自定义筹码 · 盲注 · 人数</small></span>
+        </button>
+        <button class="btn btn-gold btn-xl" id="btn-goto-join">
+          <span class="btn-ico">🎯</span><span class="btn-txt">加入房间<small>输入 6 位房间号入座</small></span>
+        </button>
+      </div>
+      <p class="lobby-tip">复制邀请链接发给朋友 · 浏览器打开即可同桌对战</p>
+    </section>
+
+    <!-- ═══════════ 创建房间 ═══════════ -->
+    <section id="view-create" class="view">
+      <header class="page-head"><button class="btn-back" data-back>‹ 返回</button><h2>创建房间</h2></header>
+      <form id="form-create" class="form card-glass" autocomplete="off">
+        <label class="field">
+          <span>你的昵称 <em>留空自动分配</em></span>
+          <input name="name" maxlength="5" placeholder="比如：赌神" />
+        </label>
+        <label class="field">
+          <span>每人筹码</span>
+          <input name="chips" type="number" inputmode="numeric" min="100" max="1000000" step="10" value="1000" required />
+          <div class="chips-row" data-target="chips">
+            <button type="button" data-val="500">500</button>
+            <button type="button" data-val="1000" class="on">1000</button>
+            <button type="button" data-val="2000">2000</button>
+            <button type="button" data-val="5000">5000</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>大盲注 <em id="sb-hint">小盲 10</em></span>
+          <input name="bigBlind" type="number" inputmode="numeric" min="1" step="1" value="20" required />
+          <div class="chips-row" data-target="bigBlind">
+            <button type="button" data-val="10">10</button>
+            <button type="button" data-val="20" class="on">20</button>
+            <button type="button" data-val="50">50</button>
+            <button type="button" data-val="100">100</button>
+          </div>
+        </label>
+        <label class="field">
+          <span>人数上限 <em>2 – 9 人</em></span>
+          <div class="chips-row seats-row" data-target="maxPlayers">
+            <button type="button" data-val="2">2</button>
+            <button type="button" data-val="3">3</button>
+            <button type="button" data-val="4">4</button>
+            <button type="button" data-val="5">5</button>
+            <button type="button" data-val="6" class="on">6</button>
+            <button type="button" data-val="7">7</button>
+            <button type="button" data-val="8">8</button>
+            <button type="button" data-val="9">9</button>
+          </div>
+          <input type="hidden" name="maxPlayers" value="6" />
+        </label>
+        <button class="btn btn-primary btn-xl" type="submit">✨ 创建并进入房间</button>
+      </form>
+    </section>
+
+    <!-- ═══════════ 加入房间 ═══════════ -->
+    <section id="view-join" class="view">
+      <header class="page-head"><button class="btn-back" data-back>‹ 返回</button><h2>加入房间</h2></header>
+      <form id="form-join" class="form card-glass" autocomplete="off">
+        <label class="field">
+          <span>房间号</span>
+          <input name="code" inputmode="numeric" maxlength="6" placeholder="• • • • • •" required class="code-input" />
+        </label>
+        <label class="field">
+          <span>你的昵称 <em>留空自动分配</em></span>
+          <input name="name" maxlength="5" placeholder="比如：小狗勾" />
+        </label>
+        <button class="btn btn-gold btn-xl" type="submit">🎯 加入牌局</button>
+      </form>
+    </section>
+
+    <!-- ═══════════ 等待房间 ═══════════ -->
+    <section id="view-room" class="view">
+      <header class="page-head">
+        <button class="btn-back" id="btn-leave">‹ 离开</button><h2>房间大厅</h2>
+        <button class="btn btn-ghost btn-mini" id="btn-rename">✏️ 改名</button>
+      </header>
+      <div class="room-card">
+        <div class="room-code-label">房间号 · 点击复制邀请链接</div>
+        <div class="room-code" id="room-code">------</div>
+        <div class="room-meta">
+          <div class="meta-item"><b id="room-count">0/0</b><span>👥 当前人数</span></div>
+          <div class="meta-item"><b id="room-chips">-</b><span>💰 每人筹码</span></div>
+          <div class="meta-item"><b id="room-blind">-</b><span>🕶 盲注 小/大</span></div>
+        </div>
+        <div class="ready-progress" id="ready-progress" hidden></div>
+      </div>
+      <h3 class="section-title">玩家列表</h3>
+      <ul id="room-players" class="player-list"></ul>
+      <div class="room-actions">
+        <button class="btn btn-primary btn-xl btn-shine" id="btn-start" hidden>🚀 开始游戏</button>
+        <button class="btn btn-primary btn-xl" id="btn-lobby-ready" hidden>✅ 准备</button>
+        <div class="owner-tools" id="owner-tools" hidden>
+          <button class="btn btn-ghost" id="btn-settings">⚙️ 房间设置</button>
+        </div>
+        <p class="waiting-tip" id="wait-tip" hidden></p>
+      </div>
+    </section>
+
+    <!-- ═══════════ 牌桌 ═══════════ -->
+    <section id="view-table" class="view">
+      <header id="table-header">
+        <div class="th-left">
+          <span class="room-tag" id="tb-room">房间 ······</span>
+          <span class="blind-tag" id="tb-blind">盲注 -/-</span>
+        </div>
+        <div class="th-right">
+          <span id="tb-street">等待中</span>
+          <span id="tb-hand"></span>
+          <button id="btn-force-end" class="btn-ghost btn-mini" hidden>⏹ 强制结束牌局</button>
+        </div>
+      </header>
+
+      <!-- 全场冠军横幅（不遮挡牌桌，可复盘最后一局） -->
+      <div id="champion-banner" hidden>
+        <span class="cb-trophy">🏆</span>
+        <div class="cb-info"><b id="cb-name"></b><span>全场冠军 · 本局牌面保留可复盘</span></div>
+      </div>
+
+      <div id="table-area">
+        <div id="table-oval">
+          <div id="table-rim" aria-hidden="true"></div>
+          <div id="bet-line" aria-hidden="true"></div>
+          <div class="table-inlay" aria-hidden="true">TEXAS HOLD'EM</div>
+          <div id="board-cards"></div>
+          <div id="pot-display" hidden><span class="pot-chips" aria-hidden="true"></span>底池 <b id="pot-amount">0</b></div>
+        </div>
+        <div id="seats"></div>
+      </div>
+
+      <div id="my-zone">
+        <div id="log-bar"></div>
+        <div id="my-row">
+          <div id="my-cards"></div>
+          <div id="my-info"></div>
+        </div>
+        <!-- 局末结算横幅：不遮挡桌面，公共牌/亮牌全程可见 -->
+        <div id="settle-bar" hidden>
+          <div id="result-line"></div>
+          <div id="settle-actions">
+            <span id="ready-status"></span>
+            <button id="btn-show" class="btn btn-ghost btn-mini" hidden>🃏 亮出我的牌</button>
+            <button id="btn-ready" class="btn btn-gold btn-shine" hidden>✅ 准备下一局</button>
+          </div>
+        </div>
+        <div id="action-bar"></div>
+      </div>
+    </section>
+
+    <!-- 房间设置弹层（房主） -->
+    <div id="overlay-settings" class="overlay" hidden>
+      <div class="overlay-card">
+        <p class="ov-eyebrow">房间设置</p>
+        <form id="form-settings" class="form" autocomplete="off">
+          <label class="field">
+            <span>每人筹码 <em>保存后全员重置</em></span>
+            <input name="chips" type="number" inputmode="numeric" min="100" max="1000000" step="10" required />
+          </label>
+          <label class="field">
+            <span>大盲注 <em id="sb-hint-settings">小盲 10</em></span>
+            <input name="bigBlind" type="number" inputmode="numeric" min="1" step="1" required />
+          </label>
+          <button class="btn btn-primary btn-xl" type="submit">保存并应用</button>
+          <button class="btn btn-ghost" type="button" id="btn-settings-close">取消</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 改名弹层 -->
+    <div id="overlay-rename" class="overlay" hidden>
+      <div class="overlay-card">
+        <p class="ov-eyebrow">修改昵称</p>
+        <form id="form-rename" class="form" autocomplete="off">
+          <label class="field">
+            <span>新昵称</span>
+            <input name="name" maxlength="5" placeholder="最多 5 个字" required />
+          </label>
+          <button class="btn btn-primary btn-xl" type="submit">保存</button>
+          <button class="btn btn-ghost" type="button" id="btn-rename-close">取消</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/evaluator.js"></script>
+  <script src="/js/net.js"></script>
+  <script src="/js/lobby.js"></script>
+  <script src="/js/table.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>
