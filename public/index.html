@@ -71,20 +71,7 @@
             <button type="button" data-val="100">100</button>
           </div>
         </label>
-        <label class="field">
-          <span>人数上限 <em>2 – 9 人</em></span>
-          <div class="chips-row seats-row" data-target="maxPlayers">
-            <button type="button" data-val="2">2</button>
-            <button type="button" data-val="3">3</button>
-            <button type="button" data-val="4">4</button>
-            <button type="button" data-val="5">5</button>
-            <button type="button" data-val="6" class="on">6</button>
-            <button type="button" data-val="7">7</button>
-            <button type="button" data-val="8">8</button>
-            <button type="button" data-val="9">9</button>
-          </div>
-          <input type="hidden" name="maxPlayers" value="6" />
-        </label>
+        
         <button class="btn btn-primary btn-xl" type="submit">✨ 创建并进入房间</button>
       </form>
     </section>
@@ -109,8 +96,7 @@
     <section id="view-room" class="view">
       <header class="page-head">
         <button class="btn-back" id="btn-leave">‹ 离开</button><h2>房间大厅</h2>
-        <button class="btn btn-ghost btn-mini" id="btn-rename">✏️ 改名</button>
-      </header>
+        </header>
       <div class="room-card">
         <div class="room-code-label">房间号 · 点击复制邀请链接</div>
         <div class="room-code" id="room-code">------</div>
@@ -126,8 +112,10 @@
       <div class="room-actions">
         <button class="btn btn-primary btn-xl btn-shine" id="btn-start" hidden>🚀 开始游戏</button>
         <button class="btn btn-primary btn-xl" id="btn-lobby-ready" hidden>✅ 准备</button>
-        <div class="owner-tools" id="owner-tools" hidden>
-          <button class="btn btn-ghost" id="btn-settings">⚙️ 房间设置</button>
+        <div class="room-tools">
+          <button class="btn btn-ghost" id="btn-settings" hidden>⚙️ 房间设置</button>
+          <button class="btn btn-ghost" id="btn-rename">✏️ 改名</button>
+          <button class="btn btn-ghost" id="btn-review" hidden>📋 上局结算</button>
         </div>
         <p class="waiting-tip" id="wait-tip" hidden></p>
       </div>
@@ -199,6 +187,18 @@
           <button class="btn btn-primary btn-xl" type="submit">保存并应用</button>
           <button class="btn btn-ghost" type="button" id="btn-settings-close">取消</button>
         </form>
+      </div>
+    </div>
+
+    <!-- 强制结束三选一弹层 -->
+    <div id="overlay-forceend" class="overlay" hidden>
+      <div class="overlay-card">
+        <p class="ov-eyebrow">强制结束牌局</p>
+        <p style="font-size:13px;color:var(--dim)">当前筹码将保留回大厅</p>
+        <div class="ov-divider"></div>
+        <button class="btn btn-ghost btn-xl" id="btn-fe-cancel">取消</button>
+        <button class="btn btn-ghost btn-xl" id="btn-fe-noScore">结算 · 不计积分</button>
+        <button class="btn btn-primary btn-xl" id="btn-fe-score">结算 · 计入积分<small>按当前筹码排名计分</small></button>
       </div>
     </div>
 

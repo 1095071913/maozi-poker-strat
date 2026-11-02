@@ -291,7 +291,7 @@ body {
 .pl-status.offline { color: var(--danger); }
 
 .room-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-.owner-tools { display: flex; gap: 10px; }
+.owner-tools { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* 小按钮 */
 .btn-mini {
@@ -1064,3 +1064,12 @@ html.short-vp .sc-act { font-size: 9.5px; min-height: 12px; }
 html.short-vp .pcard-mid { width: 40px; height: 56px; }
 html.short-vp .pcard-mid .pc-center { font-size: 21px; }
 html.short-vp #table-oval { padding-top: 7%; }
+
+/* 大厅底部工具行（改名/上局结算） */
+.lobby-tools { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; min-height: 32px; }
+.lobby-tools .btn-mini { min-height: 32px; font-size: 12px; padding: 4px 12px; }
+
+.pl-score { margin-top: 3px; }
+.pl-score .pl-record { margin-left: 0; }
+
+.room-tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }

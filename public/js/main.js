@@ -101,9 +101,18 @@
   });
 
   /* ---------- 房主强制结束牌局 ---------- */
-  $('#btn-force-end').addEventListener('click', async () => {
-    if (!window.confirm('确定结束当前牌局？所有人将返回房间大厅（保留当前筹码）。')) return;
-    const res = await Net.emitAck('game:forceEnd', {});
+  $('#btn-force-end').addEventListener('click', () => {
+    $('#overlay-forceend').hidden = false;
+  });
+  $('#btn-fe-cancel').addEventListener('click', () => ($('#overlay-forceend').hidden = true));
+  $('#btn-fe-noScore').addEventListener('click', async () => {
+    $('#overlay-forceend').hidden = true;
+    const res = await Net.emitAck('game:forceEnd', { mode: 'noScore' });
+    if (!res.ok) Toast.show(res.error || '操作失败');
+  });
+  $('#btn-fe-score').addEventListener('click', async () => {
+    $('#overlay-forceend').hidden = true;
+    const res = await Net.emitAck('game:forceEnd', { mode: 'score' });
     if (!res.ok) Toast.show(res.error || '操作失败');
   });
 
@@ -137,7 +146,7 @@
       if (room.phase !== game.phase) {
         room.phase = game.phase;
       }
-      if (game.phase !== 'waiting') {
+      if (game.phase !== 'waiting' && !(game.phase === 'gameOver' && App.localInLobby)) {
         showView('view-table');
       }
     }
@@ -161,6 +170,8 @@
   // 首次连接与每次断线重连都尝试恢复（重连后 socketId 已变，需重新登记）
   // 邀请链接加入时跳过恢复，优先走链接流程
   Net.socket.on('connect', () => {
+    const toast = document.querySelector('#toast');
+    if (toast && toast.textContent.includes('断开')) toast.hidden = true;
     if (loadSession() && !window.__linkJoinPending) resume();
   });
   Net.socket.on('disconnect', () => {

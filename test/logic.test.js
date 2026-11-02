@@ -171,7 +171,7 @@ function mockRoom(settings, playerDefs) {
     broadcastRoom() {},
     broadcastGame() {},
     broadcastAll() {},
-    recordChampion() {},
+    recordExitScores() {},
   };
   const game = new Game(room, settings);
   room.game = game;

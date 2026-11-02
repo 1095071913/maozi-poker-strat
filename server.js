@@ -71,8 +71,8 @@ io.on('connection', (socket) => {
     if (typeof ack === 'function') ack(res);
   });
 
-  socket.on('game:forceEnd', (_data, ack) => {
-    const res = rooms.forceEnd(socket);
+  socket.on('game:forceEnd', (data, ack) => {
+    const res = rooms.forceEnd(socket, data || {});
     if (typeof ack === 'function') ack(res);
   });
 

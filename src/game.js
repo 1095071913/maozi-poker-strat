@@ -41,6 +41,9 @@ class Game {
     this.runoutReveal = false;
     this.runoutEquities = null; // 全下跑牌期提前亮牌
     this.runoutEquities = null; // 跑牌期各座位胜率（%）
+    this.exitOrder = [];
+    this.exitOrder = []; // 本场出局顺序（seat 数组，用于积分）
+    this.exitRound = new Map(); // seat -> 出局轮次（同轮出局积分相同，取最小分）
     this._timers = [];
   }
 
@@ -330,8 +333,19 @@ class Game {
   /** 全下跑牌期：计算各亮牌玩家当前胜率（%） */
   calcEquities() {
     const players = this.handPlayers.filter((p) => !p.folded && p.cards.length === 2);
-    if (players.length < 2 || this.board.length >= 5) {
+    if (players.length < 2) {
       this.runoutEquities = null;
+      return;
+    }
+    if (this.board.length >= 5) {
+      // 河牌已开完：结果已确定，直接评估各家牌力（100% / 0% / 50%平局）
+      let best = null; const leaders = [];
+      for (const p of players) {
+        const ev = evaluate7([...p.cards, ...this.board]);
+        if (!best || cmpScore(ev.score, best) > 0) { best = ev.score; leaders.length = 0; leaders.push(p); }
+        else if (cmpScore(ev.score, best) === 0) leaders.push(p);
+      }
+      this.runoutEquities = new Map(players.map((p) => [p.seat, leaders.includes(p) ? Math.round(100 / leaders.length) : 0]));
       return;
     }
     const dead = new Set();
@@ -480,6 +494,8 @@ class Game {
     for (const p of this.handPlayers) {
       if (p.chips === 0 && !p.out) {
         p.out = true;
+        this.exitOrder.push(p.seat);
+        this.exitRound.set(p.seat, this.handNo);
         this.log(`${p.name} 筹码耗尽，出局`);
       }
     }
@@ -552,6 +568,8 @@ class Game {
     this.lastEvals = null;
     this.shownCards.clear();
     this.runoutReveal = false;
+    this.exitOrder = [];
+    this.exitRound.clear();
     this.runoutEquities = null;
     this.champion = null;
     for (const p of this.players) {
@@ -585,6 +603,8 @@ class Game {
     this.lastEvals = null;
     this.shownCards.clear();
     this.runoutReveal = false;
+    this.exitOrder = [];
+    this.exitRound.clear();
     this.runoutEquities = null;
     this.champion = null;
     this.toActSeat = null;
@@ -615,7 +635,7 @@ class Game {
     // 冠军单独存放；result 保留最后一局的摊牌信息，供终局复盘（看怎么赢的）
     this.champion = champ ? { seat: champ.seat, name: champ.name, chips: champ.chips } : null;
     this.log(`🏆 ${champ ? champ.name : '无人'} 赢得全场！`);
-    this.room.recordChampion(champ ? champ.id : null);
+    this.room.recordExitScores(this.exitOrder, champ ? champ.seat : null);
     this.room.broadcastRoom();
     this.room.broadcastGame();
   }
@@ -633,6 +653,8 @@ class Game {
     this.lastEvals = null;
     this.shownCards.clear();
     this.runoutReveal = false;
+    this.exitOrder = [];
+    this.exitRound.clear();
     this.runoutEquities = null;
     this.champion = null;
     for (const p of this.players) {

@@ -56,7 +56,7 @@
 
   /* ---------- 邀请链接：#房间号 自动进入加入流程 ---------- */
   (function inviteLink() {
-    const m = location.hash.match(/^#(\d{6})$/);
+    const m = location.search.match(/[?&]r=(\d{6})/) || location.hash.match(/^#(\d{6})$/);
     if (!m) return;
     const code = m[1];
     // 本机已有该房间的会话（断线重开）：不进加入表单，交由 main.js 常规恢复直接回对局
@@ -65,12 +65,12 @@
     try {
       const session = JSON.parse(localStorage.getItem(key) || 'null');
       if (session && session.roomCode === code && session.playerId) {
-        history.replaceState(null, '', location.pathname + location.search);
+        history.replaceState(null, '', location.pathname + location.search.replace(/([?&])r=\d+&?/, '$1').replace(/\?&/, '?').replace(/\?$/, ''))
         return; // main.js connect 后自动 resume 回房
       }
     } catch { /* 忽略坏数据，走新玩家流程 */ }
     window.__linkJoinPending = true; // 让 main.js 跳过旧会话恢复，优先走链接加入
-    history.replaceState(null, '', location.pathname + location.search);
+    history.replaceState(null, '', location.pathname + location.search.replace(/([?&])r=\d+&?/, '$1').replace(/\?&/, '?').replace(/\?$/, ''))
     document.querySelector('#btn-goto-join').click();
     document.querySelector('#form-join [name="code"]').value = code;
     const nameInput = document.querySelector('#form-join [name="name"]');
@@ -85,6 +85,9 @@
     $('#room-count').textContent = `${room.playerCount}/${room.settings.maxPlayers}`;
     $('#room-chips').textContent = room.settings.initialChips;
     $('#room-blind').textContent = `${room.settings.sb}/${room.settings.bb}`;
+    // 终局后大厅可回看上局结算
+    const reviewBtn = $('#btn-review');
+    if (reviewBtn) reviewBtn.hidden = !(room.phase === 'gameOver' && App.currentGame && App.currentGame.result);
 
     const ul = $('#room-players');
     ul.innerHTML = '';
@@ -93,11 +96,11 @@
     let idx = 0;
     // 按净胜场（冠军数-败局数）降序；同分按座位稳定排序
     const stats = room.stats || [];
-    const net = (pl) => {
+    const score = (pl) => {
       const st = stats.find((t) => t.name === pl.name);
-      return st ? st.wins - st.losses : 0;
+      return st ? st.score || 0 : 0;
     };
-    for (const p of [...room.players].sort((a, b) => net(b) - net(a) || a.seat - b.seat)) {
+    for (const p of [...room.players].sort((a, b) => score(b) - score(a) || a.seat - b.seat)) {
       const li = document.createElement('li');
       li.style.animationDelay = `${idx++ * 60}ms`;
       const initials = p.name.slice(0, 1);
@@ -107,7 +110,7 @@
       const canKick = me && me.isOwner && !isMe && (room.phase === 'waiting' || room.phase === 'gameOver');
       const myStat = (room.stats || []).find((t) => t.name === p.name);
       const stTxt = myStat
-        ? `<span class="pl-record"><span class="rec rec-win${myStat.wins > 0 ? ' lit' : ''}">🏆 ${myStat.wins}</span><span class="rec rec-loss">x ${myStat.losses}</span></span>`
+        ? `<span class="pl-record"><span class="rec rec-win${(myStat.score || 0) > 0 ? ' lit' : ''}">⭐ ${myStat.score || 0}</span><span class="rec rec-loss">${myStat.games || 0}场</span></span>`
         : '';
       // 准备标记：房主免准备（视为已就绪），其他人看 lobbyReady
       const readyFlag = p.isOwner ? '<span class="tag owner">免准备</span>'
@@ -122,7 +125,7 @@
             ${p.online ? '' : '<span class="tag offline">离线</span>'}
             ${room.phase === 'waiting' || room.phase === 'gameOver' ? readyFlag : ''}
           </div>
-          <div class="pl-chips"><span>筹码 <b>${p.chips}</b></span>${stTxt}</div>
+          ${stTxt ? `<div class="pl-score">${stTxt}</div>` : ''}
         </div>
         <div class="pl-actions">
           ${canKick ? `<button class="btn-kick" data-kick="${p.id}" title="移出房间">✕ 踢</button>` : '<span class="kick-slot"></span>'}
@@ -133,12 +136,12 @@
     }
     // 空座位占位：暗示还能邀请几位朋友
     const emptyCount = room.settings.maxPlayers - room.players.length;
-    for (let i = 0; i < emptyCount && i < 3; i++) {
+    for (let i = 0; i < emptyCount && i < 1; i++) {
       const li = document.createElement('li');
       li.className = 'empty-seat';
       li.innerHTML = `
         <div class="avatar empty-seat-av">＋</div>
-        <div class="pl-info"><div class="pl-name" style="color:var(--dim)">虚位以待${emptyCount > 1 ? ` · 还能邀请 ${emptyCount} 人` : ''}</div></div>
+        <div class="pl-info"><div class="pl-name" style="color:var(--dim)">等待玩家加入</div></div>
       `;
       ul.appendChild(li);
     }
@@ -146,12 +149,11 @@
     const isOwner = !!(me && me.isOwner);
     const startBtn = $('#btn-start');
     const readyBtn = $('#btn-lobby-ready');
-    const tools = $('#owner-tools');
     const tip = $('#wait-tip');
     const readyProgress = $('#ready-progress');
     startBtn.classList.remove('btn-gold');
     readyBtn.hidden = true;
-    tools.hidden = !isOwner;
+    $('#btn-settings').hidden = !isOwner;
     readyProgress.hidden = true;
 
     if (room.phase === 'waiting' || room.phase === 'gameOver') {
@@ -263,7 +265,7 @@
 
   /** 复制邀请链接：地址#房间号，朋友浏览器打开即可自动加入 */
   async function copyRoomCode(code, extra = '') {
-    const url = `${location.origin}${location.pathname}#${code}`;
+    const url = `${location.origin}${location.pathname}?r=${code}`;
     const ok = await copyText(url);
     Toast.show(
       ok
@@ -276,7 +278,13 @@
   /* ---------- 大厅准备切换 ---------- */
   $('#btn-lobby-ready').addEventListener('click', async () => {
     const res = await Net.emitAck('room:ready', {});
-    if (!res.ok) Toast.show(res.error || '操作失败');
+    if (!res.ok) {
+      if (res.error === '不在房间中') {
+        App.clearSession(); App.currentRoom = null; App.currentGame = null;
+        App.showView('view-lobby');
+        Toast.show('房间已失效，请重新创建或加入', 3000);
+      } else Toast.show(res.error || '操作失败');
+    }
   });
 
   /* ---------- 踢人 ---------- */
@@ -340,6 +348,12 @@
     if (!res.ok) return Toast.show(res.error || '改名失败');
     $('#overlay-rename').hidden = true;
     Toast.show('✅ 昵称已更新');
+  });
+
+  // 查看上局结算（回牌桌复盘终局牌面）
+  $('#btn-review').addEventListener('click', () => {
+    App.localInLobby = false;
+    App.route();
   });
 
   // 点击房间号复制

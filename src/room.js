@@ -134,7 +134,7 @@ class Room {
       phase: this.game.phase,
       playerCount: this.playerCount(),
       lobbyReady: [...this.lobbyReady],
-      stats: [...this.stats.values()].sort((a, b) => b.wins - a.wins || a.losses - b.losses),
+      stats: [...this.stats.values()].sort((a, b) => b.score - a.score),
       players: this.players.map((p) => ({
         id: p.id,
         seat: p.seat,
@@ -148,13 +148,32 @@ class Room {
     };
   }
 
-  /** 终局记录战绩：冠军 +1 胜，房间内其他人各 +1 败 */
-  recordChampion(champId) {
+  /** 终局按出局顺序积分：第1出局+1、第2出局+2...冠军=总人数分 */
+  recordExitScores(exitOrder, champSeat, exitRounds) {
+    const totalPlayers = exitOrder.length + (champSeat != null ? 1 : 0);
+    // 同轮/同筹码并列 → 取该组最小顺序位的积分
+    const scoreOf = new Map();
+    if (exitRounds && exitRounds.size > 0) {
+      const roundMinIdx = new Map();
+      exitOrder.forEach((seat, idx) => {
+        const rd = exitRounds.get(seat);
+        if (rd != null && !roundMinIdx.has(rd)) roundMinIdx.set(rd, idx);
+      });
+      exitOrder.forEach((seat, idx) => {
+        const rd = exitRounds.get(seat);
+        scoreOf.set(seat, (rd != null ? roundMinIdx.get(rd) : idx) + 1);
+      });
+    } else {
+      exitOrder.forEach((seat, idx) => scoreOf.set(seat, idx + 1));
+    }
+    if (champSeat != null) scoreOf.set(champSeat, totalPlayers);
     for (const p of this.players) {
-      const st = this.stats.get(p.id) || { name: p.name, wins: 0, losses: 0 };
-      st.name = p.name; // 改名同步
-      if (p.id === champId) st.wins += 1;
-      else st.losses += 1;
+      const earned = scoreOf.get(p.seat) || 0;
+      if (earned === 0) continue;
+      const st = this.stats.get(p.id) || { name: p.name, score: 0, games: 0 };
+      st.name = p.name;
+      st.score = (st.score || 0) + earned;
+      st.games = (st.games || 0) + 1;
       this.stats.set(p.id, st);
     }
   }
@@ -227,10 +246,7 @@ class RoomManager {
     if (!name) name = this.genNickname(); // 留空自动生成
     chips = Math.floor(Number(chips) || 1000);
     bigBlind = Math.floor(Number(bigBlind) || 20);
-    maxPlayers = Math.floor(Number(maxPlayers) || 6);
-    if (chips < 100 || chips > 1000000) return { ok: false, error: '每人筹码需在 100 ~ 1000000 之间' };
-    if (bigBlind < 1 || bigBlind * 2 > chips) return { ok: false, error: '大盲需大于 0 且不超过每人筹码的一半' };
-    if (maxPlayers < 2 || maxPlayers > 9) return { ok: false, error: '人数需在 2 ~ 9 之间' };
+    maxPlayers = 9; // 固定 9 人上限，不再让用户设置
 
     this.leave(socket); // 防止重复进房
     const code = this.genCode();
@@ -294,7 +310,12 @@ class RoomManager {
     if (phase === 'playing') return { ok: false, error: '牌局已在进行中' };
     if (phase === 'handEnd') return { ok: false, error: '本局还在结算' };
     if (phase === 'gameOver') room.resetChips(); // 终局重开：恢复初始筹码
-    const eligible = room.game.eligiblePlayers();
+    let eligible = room.game.eligiblePlayers();
+    if (eligible.length < 2) {
+      // 有人筹码为 0（强结保留的残局）→ 重置筹码后重试
+      room.resetChips();
+      eligible = room.game.eligiblePlayers();
+    }
     if (eligible.length < 2) return { ok: false, error: '至少需要 2 名在线且有筹码的玩家' };
     // 大厅准备制：除房主外所有人必须已准备
     const unready = eligible.filter((q) => !q.isOwner && !room.lobbyReady.has(q.id));
@@ -414,8 +435,8 @@ class RoomManager {
     return { ok: true };
   }
 
-  /** 房主强制结束牌局，返回房间大厅（保留各人当前筹码） */
-  forceEnd(socket) {
+  /** 房主强制结束牌局：mode = cancel(取消) / noScore(不计分) / score(按筹码计分) */
+  forceEnd(socket, { mode } = {}) {
     const room = this.roomOf(socket);
     if (!room) return { ok: false, error: '不在房间中' };
     const p = room.findPlayerById(socket.data.playerId);
@@ -423,6 +444,23 @@ class RoomManager {
     const phase = room.game.phase;
     if (phase !== 'playing' && phase !== 'handEnd') {
       return { ok: false, error: '当前没有进行中的牌局' };
+    }
+    if (mode === 'score') {
+      // 按总筹码排名（当前筹码 + 本局已投入底池的筹码）：最高者视为冠军
+      const total = (q) => q.chips + (q.totalCommitted || 0);
+      const ranked = room.players.filter((q) => total(q) > 0).sort((a, b) => total(b) - total(a));
+      const exitOrder = ranked.slice(1).map((q) => q.seat);
+      const champSeat = ranked.length > 0 ? ranked[0].seat : null;
+      // 同筹码并列归同轮，积分取最小
+      const exitRounds = new Map();
+      let round = 0; let prevT = null;
+      for (const q of ranked.slice(1)) {
+        const t = total(q);
+        if (prevT === null || t < prevT) round++;
+        exitRounds.set(q.seat, round);
+        prevT = t;
+      }
+      room.recordExitScores(exitOrder, champSeat, exitRounds);
     }
     room.game.forceEnd();
     room.lobbyReady.clear();
