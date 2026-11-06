@@ -177,13 +177,3 @@ docker compose down              # 停止
 ├── docker-compose.yml   # 一键容器化启动
 └── test/logic.test.js   # 逻辑自测（无框架，node 直接跑）
 ```
-
-## ✅ 测试
-
-```bash
-npm test    # 17 项断言：牌型评估、下注轮、边池、未跟注退回、筹码守恒（含随机对战）
-```
-
-## 📄 License
-
-MIT
